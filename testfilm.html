@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>panorama video player demo</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+				background-color: #FFFFFF;
+				margin: 5px;
+				overflow: hidden;
+			}
+
+			#info {
+				position: absolute;
+				top: 0px; width: 100%;
+				color: #ffffff;
+				padding: 5px;
+				font-family:Monospace;
+				font-size:13px;
+				font-weight: bold;
+				text-align:center;
+			}
+
+			a {
+				color: #ffffff;
+			}
+
+			#container canvas {
+      			/* force the canvas to fill out the entire area */
+      			width: 90%!important; height: 90%!important; 
+      			/* force the z-pos of the canvas to be on-top */
+      			z-index: 0; 
+    		}
+		</style>
+	</head>
+	<body>
+
+		<div id="container">			
+
+		</div>
+
+		<div id="video-controls">
+    		<button type="button" id="play-pause">Play</button>
+    		<input type="range" id="seek-bar" value="0">
+    		<button type="button" id="mute">Mute</button>
+    		<input type="range" id="volume-bar" min="0" max="1" step="0.1" value="1">
+    		<button type="button" id="full-screen">Full-Screen</button>
+  		</div>
+
+		<script src="three.min.js"></script>
+		<script src="OrbitControls.js"></script>
+		
+		<script>
+
+			var camera, scene, renderer;
+			var btn_play, btn_mute, btn_fullscreen, bar_seek, bar_volume;
+			var controls;
+			var video;
+
+			var texture_placeholder,
+			isUserInteracting = false,
+			onMouseDownMouseX = 0, onMouseDownMouseY = 0,
+			lon = 0, onMouseDownLon = 0,
+			lat = 0, onMouseDownLat = 0,
+			phi = 0, theta = 0;
+
+			init();
+			animate();
+
+			function init() {
+
+				var container, mesh;
+
+				container = document.getElementById('container');
+
+				// scene
+				scene = new THREE.Scene();
+
+				// mesh
+				var geometry = new THREE.SphereGeometry(5, 60, 40);
+				geometry.scale(-1, 1, 1);
+
+				// video
+				video = document.createElement('video');
+				video.width = 640;
+				video.height = 360;
+				//video.autoplay = true;
+				//video.loop = true;
+				video.src = "MaryOculus.webm";
+
+				var texture = new THREE.VideoTexture(video);
+				texture.minFilter = THREE.LinearFilter;
+
+				var material   = new THREE.MeshBasicMaterial({map : texture});
+
+				mesh = new THREE.Mesh(geometry, material);
+
+				scene.add(mesh);
+
+				// camera
+				camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 1, 100);
+				//camera.target = new THREE.Vector3(0, 0, 0);
+				camera.position.set(0,0,0.1);
+				camera.lookAt(mesh.position);
+
+				// render
+				renderer = new THREE.WebGLRenderer();
+				renderer.setClearColor({color: 0x000000});
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				container.appendChild( renderer.domElement );
+
+				//document.addEventListener( 'mousedown', onDocumentMouseDown, false );
+				//document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+				//document.addEventListener( 'mouseup', onDocumentMouseUp, false );
+				//document.addEventListener( 'mousewheel', onDocumentMouseWheel, false );
+				//document.addEventListener( 'MozMousePixelScroll', onDocumentMouseWheel, false);
+				controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+				window.addEventListener( 'resize', onWindowResize, false );
+
+			}
+
+			function videoPlay() {
+				if (video.paused) {
+    				video.play();
+    				btn_play.innerHTML = "Pause";
+  				}
+  				else {
+    				video.pause();
+					btn_play.innerHTML = "Play";
+				}
+			}
+
+			function videoEnd() {
+				btn_play.innerHTML = "Play";
+			}
+
+			function videoMute() {
+				if (video.muted == false) {
+    				video.muted = true;
+    				btn_mute.innerHTML = "Unmute";
+  				}
+  				else {
+    				video.muted = false;
+					btn_mute.innerHTML = "Mute";
+  				}
+			}
+
+			function videoSeek() {
+				// Calculate the slider value
+  				var value = (100 / video.duration) * video.currentTime;
+
+  				// Update the slider value
+  				bar_seek.value = value;
+			}
+
+			function videoSeekChange () {
+				  // Calculate the new time
+  				var time = video.duration * (bar_seek.value / 100);
+
+  				// Update the video time
+  				video.currentTime = time;
+
+  				if (video.paused) {
+    				btn_play.innerHTML = "Play";
+  				}
+  				else {
+					btn_play.innerHTML = "Pause";
+				}
+			}
+
+			function volumeChange() {
+				// Update the video volume
+  				video.volume = bar_volume.value;
+			}
+
+			function videoFullScreen() {
+				if (video.requestFullscreen) {
+    				video.requestFullscreen();
+  				}
+  				else if (video.mozRequestFullScreen) {
+    				video.mozRequestFullScreen(); // Firefox
+  				}
+  				else if (video.webkitRequestFullscreen) {
+    				video.webkitRequestFullscreen(); // Chrome and Safari
+  				}
+  				else {
+  					console.log("Fullscreen API Not supported");
+  				}
+			}
+
+			function onWindowResize() {
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+			}
+
+			function onDocumentMouseDown( event ) {
+
+				event.preventDefault();
+
+				isUserInteracting = true;
+
+				onPointerDownPointerX = event.clientX;
+				onPointerDownPointerY = event.clientY;
+
+				onPointerDownLon = lon;
+				onPointerDownLat = lat;
+
+			}
+
+			function onDocumentMouseMove( event ) {
+
+				if ( isUserInteracting === true ) {
+
+					lon = ( onPointerDownPointerX - event.clientX ) * 0.1 + onPointerDownLon;
+					lat = ( event.clientY - onPointerDownPointerY ) * 0.1 + onPointerDownLat;
+
+				}
+
+			}
+
+			function onDocumentMouseUp( event ) {
+
+				isUserInteracting = false;
+
+			}
+
+			function onDocumentMouseWheel( event ) {
+
+				// WebKit
+
+				if ( event.wheelDeltaY ) {
+
+					camera.fov -= event.wheelDeltaY * 0.05;
+
+				// Opera / Explorer 9
+
+				} else if ( event.wheelDelta ) {
+
+					camera.fov -= event.wheelDelta * 0.05;
+
+				// Firefox
+
+				} else if ( event.detail ) {
+
+					camera.fov += event.detail * 1.0;
+
+				}
+
+				camera.updateProjectionMatrix();
+
+			}
+
+			function animate() {
+
+				requestAnimationFrame(animate);
+				window.addEventListener( 'resize', onWindowResize, false );
+				update();
+				controls.update();
+
+			}
+
+			function update() {
+
+				/*lat = Math.max( - 85, Math.min( 85, lat ) );
+				phi = THREE.Math.degToRad( 90 - lat );
+				theta = THREE.Math.degToRad( lon );
+
+				camera.target.x = 500 * Math.sin( phi ) * Math.cos( theta );
+				camera.target.y = 500 * Math.cos( phi );
+				camera.target.z = 500 * Math.sin( phi ) * Math.sin( theta );
+
+				camera.lookAt( camera.target );*/
+
+				// bottons
+				btn_play = document.getElementById('play-pause');
+				btn_mute = document.getElementById('mute');
+				bar_seek = document.getElementById('seek-bar');
+				bar_volume = document.getElementById('volume-bar');
+				btn_fullscreen = document.getElementById('full-screen');
+
+				btn_play.addEventListener('click', videoPlay, false);
+				video.addEventListener('ended', videoEnd, false);
+				btn_mute.addEventListener('click', videoMute, false);
+				video.addEventListener('timeupdate', videoSeek, false);
+				bar_seek.addEventListener('change', videoSeekChange, false);
+				bar_volume.addEventListener('change', volumeChange, false);
+				btn_fullscreen.addEventListener('click', videoFullScreen, false);
+
+				// Pause the video when the slider handle is being dragged
+				bar_seek.addEventListener("mousedown", function() {
+  					video.pause();
+				});
+
+				// Play the video when the slider handle is dropped
+				bar_seek.addEventListener("mouseup", function() {
+  					video.play();
+				});
+
+				renderer.render( scene, camera );				
+			}
+
+		</script>
+
+		<script>
+			window.onload = function() {
+
+  			// Video
+  			var video = document.getElementById("video");
+
+
+
+  			// Sliders
+  			var seekBar = document.getElementById("seek-bar");
+  			var volumeBar = document.getElementById("volume-bar");
+
+			}
+
+
+			});
+		</script>
+	</body>
+</html>
