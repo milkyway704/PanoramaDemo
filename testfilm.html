@@ -42,15 +42,15 @@
 
 		<div id="video-controls">
     		<button type="button" id="play-pause">Play</button>
-    		<input type="range" id="seek-bar" value="0">
+    		<input type="range" id="seek-bar" value="0"></input>
     		<button type="button" id="mute">Mute</button>
-    		<input type="range" id="volume-bar" min="0" max="1" step="0.1" value="1">
-    		<button type="button" id="full-screen">Full-Screen</button>
+    		<input type="range" id="volume-bar" min="0" max="1" step="0.1" value="0.5"></input>
+    		<!--<button type="button" id="full-screen">Full-Screen</button>-->
   		</div>
 
 		<script src="three.min.js"></script>
 		<script src="OrbitControls.js"></script>
-		
+
 		<script>
 
 			var camera, scene, renderer;
@@ -177,7 +177,7 @@
 			}
 
 			function videoFullScreen() {
-				THREEx.FullScreen.request();
+				//THREEx.FullScreen.request();
 				if (video.requestFullscreen) {
     				video.requestFullscreen();
   				}
@@ -284,7 +284,7 @@
 				btn_mute = document.getElementById('mute');
 				bar_seek = document.getElementById('seek-bar');
 				bar_volume = document.getElementById('volume-bar');
-				btn_fullscreen = document.getElementById('full-screen');
+				//btn_fullscreen = document.getElementById('full-screen');
 
 				btn_play.addEventListener('click', videoPlay, false);
 				video.addEventListener('ended', videoEnd, false);
@@ -292,7 +292,7 @@
 				video.addEventListener('timeupdate', videoSeek, false);
 				bar_seek.addEventListener('change', videoSeekChange, false);
 				bar_volume.addEventListener('change', volumeChange, false);
-				btn_fullscreen.addEventListener('click', videoFullScreen, false);
+				//btn_fullscreen.addEventListener('click', videoFullScreen, false);
 
 				// Pause the video when the slider handle is being dragged
 				bar_seek.addEventListener("mousedown", function() {
